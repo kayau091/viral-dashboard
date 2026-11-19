@@ -17,6 +17,7 @@ Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY | ANTHROPIC_API_KEY
 
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -43,6 +44,22 @@ SYSTEM = (
     "为什么火: <一句话>\n"
     f"改编角度: <给{NICHE}领域的具体改编建议,一句话>"
 )
+
+
+def _red_lines():
+    """从 brand_voice.md 取「红线」那一节,让改编角度也守红线(例如不能建议「免费」福利)。"""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand_voice.md")
+    try:
+        txt = open(path, encoding="utf-8").read()
+    except Exception:
+        return ""
+    m = re.search(r"^## [^\n]*红线[^\n]*\n(.*?)(?=^## |\Z)", txt, flags=re.M | re.S)
+    return m.group(1).strip() if m else ""
+
+
+_rl = _red_lines()
+if _rl:
+    SYSTEM += "\n\n改编角度必须遵守以下红线(不能建议免费福利、免费领取、保证结果、报利率等):\n" + _rl
 
 
 def _request(url, method="GET", data=None, headers=None, timeout=120):
