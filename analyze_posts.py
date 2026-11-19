@@ -53,7 +53,9 @@ def _request(url, method="GET", data=None, headers=None, timeout=120):
         hdrs.setdefault("Content-Type", "application/json")
     req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read())
+        raw = resp.read()
+        # Supabase 的 PATCH(return=minimal)回的是空白,不能当 JSON 解析,否则会把成功误报成失败
+        return json.loads(raw) if raw.strip() else None
 
 
 def sb(path, method="GET", data=None, prefer=None):
